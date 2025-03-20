@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hotel Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-light">
+    <div class="container py-5">
+        <!-- Login Form -->
+        <div id="login-container" class="card mx-auto p-4 shadow" style="max-width: 400px;">
+            <h2 class="text-center">Login</h2>
+            <input type="text" id="login-username" class="form-control my-2" placeholder="Username">
+            <input type="password" id="login-password" class="form-control my-2" placeholder="Password">
+            <button class="btn btn-primary w-100" onclick="login()">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+            </button>
+            <p class="text-center mt-2">Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
+        </div>
+
+        <!-- Register Form -->
+        <div id="register-container" class="card mx-auto p-4 shadow d-none" style="max-width: 400px;">
+            <h2 class="text-center">Register</h2>
+            <input type="text" id="register-username" class="form-control my-2" placeholder="Username">
+            <input type="password" id="register-password" class="form-control my-2" placeholder="Password">
+            <input type="password" id="confirm-password" class="form-control my-2" placeholder="Confirm Password">
+            <button class="btn btn-success w-100" onclick="register()">
+                <i class="bi bi-person-add"></i> Register
+            </button>
+            <p class="text-center mt-2">Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="card mx-auto p-4 shadow d-none" style="max-width: 800px;">
+            <h2 class="text-center">Hotel Management Dashboard</h2>
+            <h3 class="text-center">Customer Details</h3>
+            <div class="row g-2">
+                <div class="col-md-6"><input type="text" id="customer-name" class="form-control" placeholder="Customer Name"></div>
+                <div class="col-md-6"><input type="text" id="customer-room" class="form-control" placeholder="Room No"></div>
+                <div class="col-md-6"><input type="text" id="customer-contact" class="form-control" placeholder="Contact No"></div>
+                <div class="col-md-6"><input type="text" id="customer-email" class="form-control" placeholder="Email"></div>
+                <div class="col-md-12"><input type="text" id="customer-address" class="form-control" placeholder="Address"></div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary flex-grow-1" onclick="addOrUpdateCustomer()">
+                    <i class="bi bi-person-add"></i> <span id="add-update-text">Add Customer</span>
+                </button>
+                <button id="logout-btn" class="btn btn-danger" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </div>
+
+            <table class="table table-striped table-bordered mt-4">
+                <thead class="table-dark">
+                    <tr>
+                        <th>S.No</th>
+                        <th>Name</th>
+                        <th>Room No</th>
+                        <th>Contact No</th>
+                        <th>Email</th>
+                        <th>Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customer-table">
+                    <!-- Customer data will appear here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let editIndex = -1;
+
+        function showSection(hideId, showId) {
+            document.getElementById(hideId).classList.add("d-none");
+            document.getElementById(showId).classList.remove("d-none");
+        }
+
+        function showRegister() {
+            showSection("login-container", "register-container");
+        }
+
+        function showLogin() {
+            showSection("register-container", "login-container");
+        }
+
+        function register() {
+            let username = document.getElementById("register-username").value.trim();
+            let password = document.getElementById("register-password").value.trim();
+            let confirmPassword = document.getElementById("confirm-password").value.trim();
+
+            if (!username || !password || !confirmPassword) {
+                alert("Please fill in all fields!");
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                alert("Passwords do not match!");
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem("users")) || {};
+
+            if (users[username]) {
+                alert("Username already exists! Try another one.");
+                return;
+            }
+
+            users[username] = password;
+            localStorage.setItem("users", JSON.stringify(users));
+
+            alert("Registration successful! You can now log in.");
+            showLogin();
+        }
+
+        function login() {
+    let username = document.getElementById("login-username").value.trim();
+    let password = document.getElementById("login-password").value.trim();
+
+    // Check if fields are empty
+    if (!username || !password) {
+        alert("Please enter both username and password!");
+        return;
+    }
+
+    let users = JSON.parse(localStorage.getItem("users")) || {};
+
+    if (users[username] === password) {
+        alert("Login successful!");
+        showSection("login-container", "dashboard");
+        loadCustomers();
+    } else {
+        alert("Invalid username or password!");
+    }
+}
+
+
+        function logout() {
+            location.reload();
+        }
+
+        function addOrUpdateCustomer() {
+            let name = document.getElementById("customer-name").value.trim();
+            let room = document.getElementById("customer-room").value.trim();
+            let contact = document.getElementById("customer-contact").value.trim();
+            let email = document.getElementById("customer-email").value.trim();
+            let address = document.getElementById("customer-address").value.trim();
+
+            if (!name || !room || !contact || !email || !address) {
+                alert("Please fill in all fields before adding or updating.");
+                return;
+            }
+
+            let customers = JSON.parse(localStorage.getItem("customers")) || [];
+
+            if (editIndex === -1) {
+                customers.push({ name, room, contact, email, address });
+            } else {
+                customers[editIndex] = { name, room, contact, email, address };
+                editIndex = -1;
+                document.getElementById("add-update-text").innerText = "Add Customer";
+            }
+
+            localStorage.setItem("customers", JSON.stringify(customers));
+            loadCustomers();
+
+            document.querySelectorAll("#customer-name, #customer-room, #customer-contact, #customer-email, #customer-address").forEach(input => input.value = "");
+        }
+
+        function editCustomer(index) {
+            let customers = JSON.parse(localStorage.getItem("customers")) || [];
+
+            document.getElementById("customer-name").value = customers[index].name;
+            document.getElementById("customer-room").value = customers[index].room;
+            document.getElementById("customer-contact").value = customers[index].contact;
+            document.getElementById("customer-email").value = customers[index].email;
+            document.getElementById("customer-address").value = customers[index].address;
+
+            editIndex = index;
+            document.getElementById("add-update-text").innerText = "Update Customer";
+        }
+
+        function deleteCustomer(index) {
+            let customers = JSON.parse(localStorage.getItem("customers")) || [];
+            customers.splice(index, 1);
+            localStorage.setItem("customers", JSON.stringify(customers));
+            loadCustomers();
+        }
+
+        function loadCustomers() {
+            let table = document.getElementById("customer-table");
+            table.innerHTML = "";
+            let customers = JSON.parse(localStorage.getItem("customers")) || [];
+
+            customers.forEach((customer, index) => {
+                let row = table.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${customer.name}</td>
+                    <td>${customer.room}</td>
+                    <td>${customer.contact}</td>
+                    <td>${customer.email}</td>
+                    <td>${customer.address}</td>
+                    <td>
+                        <button class='btn btn-warning btn-sm' onclick='editCustomer(${index})'><i class="bi bi-pencil"></i>edit</button>
+                        <button class='btn btn-danger btn-sm' onclick='deleteCustomer(${index})'><i class="bi bi-trash"></i>delete</button>
+                    </td>`;
+            });
+        }
+    </script>
+</body>
+
+</html>
